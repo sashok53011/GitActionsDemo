@@ -1,0 +1,77 @@
+name: Test Pipeline
+
+# Läuft bei Push auf main, bei Pull Requests und manuell (workflow_dispatch)
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+# Least Privilege: GITHUB_TOKEN darf nur lesen
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build & Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run unit tests
+        id: tests
+        run: npm test
+
+      - name: Write test summary to run page
+        if: always()
+        run: |
+          {
+            echo "## 🧪 Test Pipeline – Ergebnis"
+            echo ""
+            echo "| Feld | Wert |"
+            echo "|------|------|"
+            echo "| Workflow | ${{ github.workflow }} |"
+            echo "| Commit | \`${{ github.sha }}\` |"
+            echo "| Branch | \`${{ github.ref_name }}\` |"
+            echo "| Ausgelöst durch | ${{ github.actor }} |"
+            echo "| Status | ${{ job.status }} |"
+            echo ""
+            echo "### Ausführung"
+            echo '```'
+            echo "Node.js-Version: $(node --version)"
+            echo "npm-Version:     $(npm --version)"
+            echo "Runner:          ${{ runner.os }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Generate test report artifact
+        if: always()
+        run: |
+          mkdir -p test-results
+          {
+            echo "Test Pipeline Report"
+            echo "===================="
+            echo "Commit:  ${{ github.sha }}"
+            echo "Branch:  ${{ github.ref_name }}"
+            echo "Status:  ${{ job.status }}"
+            echo "Date:    $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "Node:    $(node --version)"
+          } > test-results/report.txt
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: test-results/report.txt

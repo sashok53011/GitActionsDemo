@@ -1,0 +1,10 @@
+{
+  "name": "gitactionsdemo",
+  "version": "1.0.0",
+  "description": "Demo repository with a real GitHub Actions test pipeline",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT"
+}

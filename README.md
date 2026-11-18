@@ -1,5 +1,7 @@
 🚀 Einstieg in CI/CD mit GitHub Actions (Demo-Projekt)
 
+![Test Pipeline](https://github.com/sashok53011/GitActionsDemo/actions/workflows/test-pipeline.yml/badge.svg)
+
 Willkommen in diesem Demo-Repository! Dieses Projekt zeigt praxisnah, wie man den Weg von der manuellen „Integration Hell“ hin zu einer modernen, automatisierten CI/CD-Pipeline mit GitHub Actions meistert.
 
 🎯 Was macht diese Pipeline?
