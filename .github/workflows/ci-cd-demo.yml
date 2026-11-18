@@ -1,0 +1,78 @@
+name: CI/CD Demo Pipeline (GitHub Actions)
+
+# 1. Events / Trigger (Slaid 6, 7, 9, 12)
+# Zapuskaetsja pri pushe v main, pri sozdanii Pull Request ili vruchnuju (workflow_dispatch)
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+# 2. Best Practices: Least Privilege (Slaid 11)
+# Minimizacija prav avtomaticeskogo tokena GITHUB_TOKEN (tolko chtenie)
+permissions:
+  contents: read
+
+jobs:
+  # =========================================================================
+  # JOB 1: Continuous Integration (CI) - Linter i Testy (Slaid 3, 4, 9, 14)
+  # =========================================================================
+  ci-quality-gate:
+    name: CI - Proverka koda i testy
+    # GitHub-hosted Runner: svezhaja virtualnaja mashina Ubuntu (Slaid 7, 9, 13)
+    runs-on: ubuntu-latest
+
+    steps:
+      # Shag 1: Zagruzka koda iz repozitorija s pinom versii @v4 (Slaid 9, 10, 11)
+      - name: Checkout repozitorija
+        uses: actions/checkout@v4
+
+      # Shag 2: Ustanovka okruzhenija Node.js (Slaid 10)
+      - name: Nastrojka Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Shag 3: Shag 1 Roadmapa - Linter / Proverka sintaksisa (Slaid 14)
+      - name: Proverka sintaksisa i formata (Linter)
+        run: |
+          echo "Proverjaem pravila formata koda..."
+          # V realnom proekte zdes: npm run lint
+          echo "Linter: OK!"
+
+      # Shag 4: Shag 2 Roadmapa - Avtomaticheskie Unit-testy (Slaid 3, 9, 14)
+      - name: Zapusk Unit-testov
+        run: |
+          echo "Zapuskaem avtotesty..."
+          # V realnom proekte zdes: npm ci && npm test
+          echo "Vse testy uspeshno projdeny (PASS)!"
+
+  # =========================================================================
+  # JOB 2: Continuous Delivery (CD) - Vykadka na Staging (Slaid 3, 4, 14)
+  # =========================================================================
+  cd-staging-deploy:
+    name: CD - Dostavka na Staging
+    runs-on: ubuntu-latest
+    # Zavisimost: etot job zapustitsja TOLKO esli ci-quality-gate proshel uspeshno (Quality Gate, Slaid 12)
+    needs: ci-quality-gate
+    # Zashchita ot "Pjatnichnoj paniki": vykatyvaem tolko pri pushe v main, a ne iz PR (Slaid 2, 14)
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout repozitorija
+        uses: actions/checkout@v4
+
+      # Primer bezopasnoj raboty s sekretami (Slaid 11)
+      - name: Razvertyvanie na Staging-servere
+        env:
+          # Nikakih parolej v kode! Berem iz GitHub Secrets (Slaid 11)
+          DEMO_API_KEY: ${{ secrets.API_KEY }}
+        run: |
+          echo "Quality Gate projden. Nachinaem dostavku (Continuous Delivery)..."
+          if [ -z "$DEMO_API_KEY" ]; then
+            echo "Primechanie: Sekret API_KEY ne zadan, rabotaem v demo-rezhime."
+          else
+            echo "Sekret API_KEY uspeshno podkljuchen (zamaskirovan v logah)."
+          fi
+          echo "Prilozhenie uspeshno razvernuto na Staging i gotovo k relizu!"
